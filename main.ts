@@ -1,20 +1,29 @@
-// Driver for the markdown-fast renderer: reads the case set, renders every
-// case with parse(), and writes the HTML strings in input order.
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+// markdown-fast driver.
+//
+// Reads the competition case set from cases.json in the input directory,
+// renders every case through parse(), and writes the HTML results as a
+// JSON array (same order as the input) to html.json in the output
+// directory. Directories come from MAKEFUN_INPUT_DIR / MAKEFUN_OUTPUT_DIR
+// and default to /input and /output.
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { parse } from "./parse.js";
 
-type Case = { id: string; markdown: string };
+interface InputCase {
+  id: string;
+  markdown: string;
+}
 
-const inputDir = process.env.MAKEFUN_INPUT_DIR ?? "/input";
-const outputDir = process.env.MAKEFUN_OUTPUT_DIR ?? "/output";
+const inputDir: string = process.env.MAKEFUN_INPUT_DIR ?? "/input";
+const outputDir: string = process.env.MAKEFUN_OUTPUT_DIR ?? "/output";
 
-const raw = readFileSync(inputDir + "/cases.json", "utf8");
-const cases = JSON.parse(raw) as Case[];
+const caseFile: string = join(inputDir, "cases.json");
+const cases: InputCase[] = JSON.parse(readFileSync(caseFile, "utf8")) as InputCase[];
 
-const html: string[] = new Array(cases.length);
-for (let i = 0; i < cases.length; i++) {
-  html[i] = parse(cases[i].markdown);
+const rendered: string[] = new Array(cases.length);
+for (let idx = 0; idx < cases.length; idx++) {
+  rendered[idx] = parse(cases[idx].markdown);
 }
 
 mkdirSync(outputDir, { recursive: true });
-writeFileSync(outputDir + "/html.json", JSON.stringify(html));
+writeFileSync(join(outputDir, "html.json"), JSON.stringify(rendered));
